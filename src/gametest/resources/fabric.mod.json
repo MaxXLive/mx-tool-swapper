@@ -9,7 +9,8 @@
 			"de.ermackov.toolswapper.test.ToolPickerGameTest"
 		],
 		"fabric-client-gametest": [
-			"de.ermackov.toolswapper.test.ToolSwapperClientGameTest"
+			"de.ermackov.toolswapper.test.ToolSwapperClientGameTest",
+			"de.ermackov.toolswapper.test.ToolSwapperShowcaseGameTest"
 		]
 	},
 	"depends": {

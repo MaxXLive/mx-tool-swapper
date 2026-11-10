@@ -50,7 +50,7 @@ jobs:
           fi
           echo "Building $version"
           chmod +x gradlew
-          ./gradlew build -PreleaseVersion="$version" --no-configuration-cache
+          ./gradlew build runGameTest -PreleaseVersion="$version" --no-configuration-cache
 
       - uses: actions/upload-artifact@v7
         with:
@@ -71,3 +71,17 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "MX Tool Swapper $VERSION" \
             --notes-file "$RUNNER_TEMP/CHANGELOG.md"
+
+      - name: Upload to CurseForge
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && steps.info.outputs.released != 'true' && steps.info.outputs.relevant == 'true'
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT: "1796511"
+          FILE: build/libs/MXToolSwapper-${{ steps.info.outputs.version }}.jar
+          DISPLAY_NAME: MX Tool Swapper ${{ steps.info.outputs.version }}
+          CHANGELOG_FILE: ${{ runner.temp }}/CHANGELOG.md
+          MC_VERSION: ${{ steps.info.outputs.mc }}
+          ENVIRONMENTS: Client
+          JAVA_VERSION: Java 25
+          RELATIONS: '[{"slug":"fabric-api","type":"requiredDependency"},{"slug":"cloth-config","type":"requiredDependency"},{"slug":"modmenu","type":"optionalDependency"}]'
+        run: bash .github/scripts/curseforge-upload.sh
