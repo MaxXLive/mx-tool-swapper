@@ -1,0 +1,35 @@
+{
+	"schemaVersion": 1,
+	"id": "mxtoolswapper",
+	"version": "${version}",
+	"name": "MX Tool Swapper",
+	"description": "Automatically switches to the best tool from your inventory when mining, to the best weapon when attacking, and equips your elytra when you take off. Fully client-side.",
+	"authors": [
+		"maxxlive"
+	],
+	"contact": {
+		"sources": "https://github.com/MaxXLive/mx-tool-swapper",
+		"issues": "https://github.com/MaxXLive/mx-tool-swapper/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/mxtoolswapper/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"de.ermackov.toolswapper.ToolSwapperClient"
+		],
+		"modmenu": [
+			"de.ermackov.toolswapper.config.ModMenuIntegration"
+		]
+	},
+	"accessWidener": "mxtoolswapper.classtweaker",
+	"depends": {
+		"fabricloader": ">=0.19.0",
+		"fabric-api": "*",
+		"cloth-config": ">=26.3",
+		"minecraft": ">=26.3"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

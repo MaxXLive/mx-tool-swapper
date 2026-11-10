@@ -1,0 +1,45 @@
+{
+	"key.category.mxtoolswapper.main": "MX Tool Swapper",
+	"key.mxtoolswapper.toggle": "MX Tool Swapper umschalten",
+	"message.mxtoolswapper.enabled": "MX Tool Swapper aktiviert",
+	"message.mxtoolswapper.disabled": "MX Tool Swapper deaktiviert",
+
+	"config.mxtoolswapper.title": "MX Tool Swapper",
+	"config.mxtoolswapper.category.general": "Allgemein",
+	"config.mxtoolswapper.category.inventory": "Inventar",
+	"config.mxtoolswapper.category.filter": "Filter",
+	"config.mxtoolswapper.category.elytra": "Elytren",
+
+	"config.mxtoolswapper.elytraSwap": "Elytren automatisch anlegen",
+	"config.mxtoolswapper.elytraSwap.tooltip": "Beim Springen in der Luft eine Elytren aus dem Inventar in den Brust-Slot legen, damit du sofort losgleitest.",
+	"config.mxtoolswapper.elytraSwapBack": "Nach der Landung Rüstung zurücklegen",
+	"config.mxtoolswapper.elytraSwapBack.tooltip": "Nach der Landung den vorher getragenen Brustpanzer wieder anlegen. Gilt nur für automatisch angelegte Elytren.",
+
+	"config.mxtoolswapper.enabled": "Aktiviert",
+	"config.mxtoolswapper.enabled.tooltip": "Hauptschalter. Lässt sich auch per Taste umschalten (Steuerung > MX Tool Swapper).",
+	"config.mxtoolswapper.toolSwapMode": "Werkzeug-Wechselmodus",
+	"config.mxtoolswapper.toolSwapMode.tooltip": "Alle: Beim Abbauen zum besten Werkzeug wechseln, auch weg vom Schwert (nur wenn „Waffe wechseln“ an ist, damit beim nächsten Angriff wieder das Schwert kommt).\nNur Werkzeuge: Nicht wechseln, wenn ein Schwert gehalten wird.\nKein Wechsel: Beim Abbauen nie wechseln.",
+	"config.mxtoolswapper.toolSwapMode.any": "Alle",
+	"config.mxtoolswapper.toolSwapMode.only_tools": "Nur Werkzeuge",
+	"config.mxtoolswapper.toolSwapMode.no_swap": "Kein Wechsel",
+	"config.mxtoolswapper.swapWeapon": "Waffe wechseln",
+	"config.mxtoolswapper.swapWeapon.tooltip": "Beim Angriff auf ein Wesen zum stärksten Schwert wechseln (oder zur Axt, falls kein Schwert vorhanden ist).\nWenn aus, wird ein gehaltenes Schwert beim Abbauen nie weggewechselt.",
+	"config.mxtoolswapper.swapFromAnyItem": "Von jedem Gegenstand wechseln",
+	"config.mxtoolswapper.swapFromAnyItem.tooltip": "Auch wechseln, wenn ein Nicht-Werkzeug oder nichts in der Hand ist.\nStandardmäßig wird nur gewechselt, wenn ein Werkzeug oder Schwert gehalten wird.",
+	"config.mxtoolswapper.showToggleMessage": "Umschalt-Nachricht anzeigen",
+	"config.mxtoolswapper.showToggleMessage.tooltip": "Beim Umschalten per Taste eine Nachricht über der Schnellleiste anzeigen.",
+
+	"config.mxtoolswapper.searchHotbar": "Schnellleiste durchsuchen",
+	"config.mxtoolswapper.searchHotbar.tooltip": "Auch Werkzeuge aus der Schnellleiste verwenden, nicht nur aus dem Hauptinventar.",
+	"config.mxtoolswapper.selectHotbarSlot": "Schnellleisten-Slot auswählen",
+	"config.mxtoolswapper.selectHotbarSlot.tooltip": "Liegt das beste Werkzeug in der Schnellleiste, wird dessen Slot ausgewählt, statt es in den aktuellen Slot zu verschieben.",
+	"config.mxtoolswapper.minRemainingDurability": "Minimale Rest-Haltbarkeit",
+	"config.mxtoolswapper.minRemainingDurability.tooltip": "Werkzeuge mit höchstens so viel Rest-Haltbarkeit werden nicht eingewechselt. 0 deaktiviert das.",
+
+	"config.mxtoolswapper.filterType": "Filtertyp",
+	"config.mxtoolswapper.filterType.tooltip": "Erlaubnisliste: Nur gelistete Gegenstände werden gewechselt.\nSperrliste: Gelistete Gegenstände werden nie gewechselt.",
+	"config.mxtoolswapper.filterType.allowlist": "Erlaubnisliste",
+	"config.mxtoolswapper.filterType.blocklist": "Sperrliste",
+	"config.mxtoolswapper.filterItems": "Filter-Gegenstände",
+	"config.mxtoolswapper.filterItems.tooltip": "Item-IDs wie minecraft:diamond_pickaxe oder Item-Tags wie #minecraft:axes."
+}

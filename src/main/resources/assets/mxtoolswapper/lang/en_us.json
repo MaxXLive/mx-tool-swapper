@@ -1,0 +1,45 @@
+{
+	"key.category.mxtoolswapper.main": "MX Tool Swapper",
+	"key.mxtoolswapper.toggle": "Toggle MX Tool Swapper",
+	"message.mxtoolswapper.enabled": "MX Tool Swapper enabled",
+	"message.mxtoolswapper.disabled": "MX Tool Swapper disabled",
+
+	"config.mxtoolswapper.title": "MX Tool Swapper",
+	"config.mxtoolswapper.category.general": "General",
+	"config.mxtoolswapper.category.inventory": "Inventory",
+	"config.mxtoolswapper.category.filter": "Filter",
+	"config.mxtoolswapper.category.elytra": "Elytra",
+
+	"config.mxtoolswapper.elytraSwap": "Auto-Equip Elytra",
+	"config.mxtoolswapper.elytraSwap.tooltip": "Put an elytra from your inventory into the chest slot when pressing jump in mid-air, so you start gliding right away.",
+	"config.mxtoolswapper.elytraSwapBack": "Swap Armor Back After Landing",
+	"config.mxtoolswapper.elytraSwapBack.tooltip": "After landing, put the previously worn chestplate back on. Only applies to an elytra that was equipped automatically.",
+
+	"config.mxtoolswapper.enabled": "Enabled",
+	"config.mxtoolswapper.enabled.tooltip": "Master switch. Can also be toggled with a key (Controls > MX Tool Swapper).",
+	"config.mxtoolswapper.toolSwapMode": "Tool Swap Mode",
+	"config.mxtoolswapper.toolSwapMode.tooltip": "Any: swap to the best tool when mining, also away from a sword (only if Swap Weapon is on, so the sword comes back on the next attack).\nOnly Tools: don't swap while holding a sword.\nNo Swap: never swap tools when mining.",
+	"config.mxtoolswapper.toolSwapMode.any": "Any",
+	"config.mxtoolswapper.toolSwapMode.only_tools": "Only Tools",
+	"config.mxtoolswapper.toolSwapMode.no_swap": "No Swap",
+	"config.mxtoolswapper.swapWeapon": "Swap Weapon",
+	"config.mxtoolswapper.swapWeapon.tooltip": "Swap to the strongest sword (or axe if there is no sword) when attacking an entity.\nWhen off, a held sword is never swapped away while mining.",
+	"config.mxtoolswapper.swapFromAnyItem": "Swap From Any Item",
+	"config.mxtoolswapper.swapFromAnyItem.tooltip": "Also swap when holding a non-tool item or an empty hand.\nBy default, swapping only happens while a tool or sword is held.",
+	"config.mxtoolswapper.showToggleMessage": "Show Toggle Message",
+	"config.mxtoolswapper.showToggleMessage.tooltip": "Show a message above the hotbar when toggling with the key.",
+
+	"config.mxtoolswapper.searchHotbar": "Search Hotbar",
+	"config.mxtoolswapper.searchHotbar.tooltip": "Also use tools from the hotbar, not only from the main inventory.",
+	"config.mxtoolswapper.selectHotbarSlot": "Select Hotbar Slot",
+	"config.mxtoolswapper.selectHotbarSlot.tooltip": "If the best tool is in the hotbar, select its slot instead of moving it into the current slot.",
+	"config.mxtoolswapper.minRemainingDurability": "Minimum Remaining Durability",
+	"config.mxtoolswapper.minRemainingDurability.tooltip": "Tools with this much durability left or less are not swapped in. 0 disables this.",
+
+	"config.mxtoolswapper.filterType": "Filter Type",
+	"config.mxtoolswapper.filterType.tooltip": "Allowlist: only listed items are swapped.\nBlocklist: listed items are never swapped.",
+	"config.mxtoolswapper.filterType.allowlist": "Allowlist",
+	"config.mxtoolswapper.filterType.blocklist": "Blocklist",
+	"config.mxtoolswapper.filterItems": "Filter Items",
+	"config.mxtoolswapper.filterItems.tooltip": "Item ids like minecraft:diamond_pickaxe or item tags like #minecraft:axes."
+}

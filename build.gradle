@@ -1,0 +1,65 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+// CI passes -PreleaseVersion=<mc>-patch-<n>; local builds are marked as dev builds
+version = providers.gradleProperty("releaseVersion").getOrElse("${project.minecraft_version}-dev")
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { url "https://maven.shedaniel.me/" }
+    maven { url "https://maven.terraformersmc.com/releases/" }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    implementation("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+    implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "mxtoolswapper-test"
+        enableGameTests = true
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/${project.mod_id}.classtweaker")
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release = 25
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archives_base_name}" }
+    }
+}
