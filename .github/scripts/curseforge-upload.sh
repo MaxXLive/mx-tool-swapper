@@ -53,7 +53,7 @@ metadata=$(jq -n \
 	  gameVersions: $versions, relations: {projects: $relations}}')
 echo "Uploading $FILE to CurseForge project $CURSEFORGE_PROJECT with game versions ${ids[*]}"
 
-curl -fsS -H "X-Api-Token: $CURSEFORGE_TOKEN" \
+curl -sS --fail-with-body -H "X-Api-Token: $CURSEFORGE_TOKEN" \
 	-F "metadata=$metadata" \
 	-F "file=@$FILE" \
 	"$api/projects/$CURSEFORGE_PROJECT/upload-file"
