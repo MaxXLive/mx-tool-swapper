@@ -43,8 +43,10 @@ public class ToolSwapperClientGameTest implements FabricClientGameTest {
 			assertMainHand(context, server, Items.DIAMOND_PICKAXE, "after mining stone");
 			assertInventorySlot(server, 9, Items.IRON_SHOVEL, "the shovel should have moved to where the pickaxe was");
 
-			// Mining: a better tool in the hotbar is selected instead of moved.
+			// Mining: a better tool in the hotbar is selected instead of moved. Forget the shovel the player held before,
+			// otherwise the mod would go back to it.
 			server.runCommand("item replace entity @a hotbar.3 with diamond_shovel");
+			context.runOnClient(mc -> ToolSwapper.resetLastMinedBlock());
 			context.waitTicks(3);
 			mine(context, dirt);
 			assertMainHand(context, server, Items.DIAMOND_SHOVEL, "after mining dirt");

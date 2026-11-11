@@ -29,6 +29,10 @@ public class ToolSwapperConfig {
 	public boolean searchHotbar = true;
 	public boolean selectHotbarSlot = true;
 	public int minRemainingDurability = 0;
+	public boolean keepSuitableTool = true;
+	public boolean returnToPreviousTool = true;
+	public boolean preferSilkTouch = true;
+	public List<String> silkTouchBlocks = new ArrayList<>(SilkTouchBlocks.DEFAULTS);
 	public FilterType filterType = FilterType.BLOCKLIST;
 	public List<String> filterItems = new ArrayList<>();
 	public boolean showToggleMessage = true;
@@ -64,6 +68,7 @@ public class ToolSwapperConfig {
 			ToolSwapperClient.LOGGER.error("Failed to save config to {}", PATH, e);
 		}
 		ItemFilter.rebuild();
+		SilkTouchBlocks.rebuild();
 	}
 
 	/** Renames the config file of versions before the "mx" prefix once. */
@@ -88,6 +93,9 @@ public class ToolSwapperConfig {
 		}
 		if (filterItems == null) {
 			filterItems = new ArrayList<>();
+		}
+		if (silkTouchBlocks == null) {
+			silkTouchBlocks = new ArrayList<>(SilkTouchBlocks.DEFAULTS);
 		}
 		minRemainingDurability = Math.max(0, minRemainingDurability);
 		return this;

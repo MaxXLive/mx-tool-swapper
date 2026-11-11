@@ -17,7 +17,10 @@
 When you start mining a block, the mod searches your inventory for the fastest tool that still gets the block's drops and swaps it into your hand.
 - A tool that breaks the block instantly is picked right away.
 - Efficiency enchantments are taken into account.
-- If your current tool is already good for the block type you keep mining, nothing is swapped.
+- If the tool in your hand already mines the block properly, it stays in your hand.
+- After the mod swapped your tool away, e.g. to a shovel for some dirt, you get back exactly that tool once it fits again, not just the fastest one.
+- Silk touch and non-silk touch tools are kept apart: a silk touch tool is never swapped for a faster one without, and ordinary blocks use tools without silk touch first.
+- Blocks that need silk touch, like glass, ender chests and ice, get a silk touch tool automatically. The list can be changed in the settings.
 - If the best tool is in your hotbar, its slot is selected. Otherwise it is swapped into the current slot.
 
 ### Weapon swapping
@@ -41,12 +44,16 @@ All settings can be changed in game through [Mod Menu](https://modrinth.com/mod/
 |---|---|---|
 | Enabled | on | Master switch for all features |
 | Tool Swap Mode | Any | **Any**: swap to the best tool when mining. **Only Tools**: never swap away from a held sword. **No Swap**: never swap when mining |
+| Keep Working Tool | on | Keep a held tool that mines the block properly. When off, swap to a faster tool, but never between silk touch and non-silk touch |
+| Return to Previous Tool | on | After a swap, go back to exactly the tool you had before once it fits again |
 | Swap Weapon | on | Swap to the best weapon when attacking. When off, a held sword is never swapped away while mining |
 | Swap From Any Item | off | Also swap when holding a non-tool item or nothing |
 | Show Toggle Message | on | Show a message above the hotbar when toggling with the key |
 | Search Hotbar | on | Also use tools from the hotbar |
 | Select Hotbar Slot | on | Select a hotbar tool's slot instead of moving it |
 | Minimum Remaining Durability | 0 | Skip tools with this much durability left or less (0 = off) |
+| Silk Touch for Listed Blocks | on | Mine the listed blocks with a silk touch tool if there is one |
+| Silk Touch Blocks | glass, panes, ender chest, ice, … | Block ids (`minecraft:ender_chest`), block tags (`#minecraft:ice`) or ids with `*` as wildcard (`minecraft:*glass_pane`) |
 | Auto-Equip Elytra | on | Equip an elytra when jumping in mid-air |
 | Swap Armor Back After Landing | on | Put the previous chestplate back on after landing |
 | Filter Type | Blocklist | Whether the filter list allows or blocks items |

@@ -38,6 +38,16 @@ public final class ConfigScreen {
 				.setTooltip(tooltip("toolSwapMode"))
 				.setSaveConsumer(value -> config.toolSwapMode = value)
 				.build());
+		general.addEntry(entries.startBooleanToggle(text("keepSuitableTool"), config.keepSuitableTool)
+				.setDefaultValue(defaults.keepSuitableTool)
+				.setTooltip(tooltip("keepSuitableTool"))
+				.setSaveConsumer(value -> config.keepSuitableTool = value)
+				.build());
+		general.addEntry(entries.startBooleanToggle(text("returnToPreviousTool"), config.returnToPreviousTool)
+				.setDefaultValue(defaults.returnToPreviousTool)
+				.setTooltip(tooltip("returnToPreviousTool"))
+				.setSaveConsumer(value -> config.returnToPreviousTool = value)
+				.build());
 		general.addEntry(entries.startBooleanToggle(text("swapWeapon"), config.swapWeapon)
 				.setDefaultValue(defaults.swapWeapon)
 				.setTooltip(tooltip("swapWeapon"))
@@ -70,6 +80,19 @@ public final class ConfigScreen {
 				.setMin(0)
 				.setTooltip(tooltip("minRemainingDurability"))
 				.setSaveConsumer(value -> config.minRemainingDurability = value)
+				.build());
+
+		ConfigCategory silkTouch = builder.getOrCreateCategory(Component.translatable(PREFIX + "category.silkTouch"));
+		silkTouch.addEntry(entries.startBooleanToggle(text("preferSilkTouch"), config.preferSilkTouch)
+				.setDefaultValue(defaults.preferSilkTouch)
+				.setTooltip(tooltip("preferSilkTouch"))
+				.setSaveConsumer(value -> config.preferSilkTouch = value)
+				.build());
+		silkTouch.addEntry(entries.startStrList(text("silkTouchBlocks"), new ArrayList<>(config.silkTouchBlocks))
+				.setDefaultValue(defaults.silkTouchBlocks)
+				.setExpanded(true)
+				.setTooltip(tooltip("silkTouchBlocks"))
+				.setSaveConsumer(value -> config.silkTouchBlocks = new ArrayList<>(value))
 				.build());
 
 		ConfigCategory elytra = builder.getOrCreateCategory(Component.translatable(PREFIX + "category.elytra"));

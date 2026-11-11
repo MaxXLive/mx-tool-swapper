@@ -1,7 +1,9 @@
 package de.ermackov.toolswapper;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
@@ -16,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
@@ -36,17 +39,29 @@ public final class ToolPicker {
 	/** A block breaks in the first tick when speed / hardness reaches this value (see BlockBehaviour#getDestroyProgress). */
 	private static final float INSTANT_BREAK_RATIO = 30f;
 
+	/** How many tools {@link #previousTools} remembers. */
+	private static final int MAX_PREVIOUS_TOOLS = 9;
+
 	/**
 	 * The block type the held item was last found good enough for. Mining more of it does not trigger another search,
 	 * so a working tool is not swapped back and forth while digging through the same material.
 	 */
 	private @Nullable Block settledBlock;
+	/**
+	 * Tools the player had in hand before the mod swapped them away, most recent first. When the held item no longer
+	 * fits, these are tried before any other tool, so the player gets back the exact tool they mined with before.
+	 */
+	private final List<ItemStack> previousTools = new ArrayList<>();
+	/** The tool the mod last put into the main hand, or null once the player is back on a tool of their own. */
+	private @Nullable ItemStack autoPicked;
 
 	public void reset() {
 		settledBlock = null;
+		previousTools.clear();
+		autoPicked = null;
 	}
 
-	/** The slot with a faster tool for the block than the held item, or {@link #NONE}. */
+	/** The slot with a better tool for the block than the held item, or {@link #NONE}. */
 	public int pickTool(List<ItemStack> inventory, int selectedSlot, BlockState state, float hardness,
 			@Nullable Holder<Enchantment> efficiency, SwapSettings settings) {
 		if (settings.toolSwapMode() == ToolSwapMode.NO_SWAP || state.isAir()) {
@@ -58,19 +73,114 @@ public final class ToolPicker {
 		}
 
 		MiningJob job = new MiningJob(state, hardness, efficiency);
-		float heldSpeed = 0;
-		if (job.suits(held)) {
-			if (hardness == 0 || state.getBlock() == settledBlock) {
-				return NONE;
-			}
-			heldSpeed = job.speedOf(held);
+		boolean heldSuits = job.suits(held);
+		if (heldSuits && (hardness == 0 || state.getBlock() == settledBlock)) {
+			return NONE;
 		}
 		settledBlock = state.getBlock();
 
-		float speedToBeat = heldSpeed;
-		return bestSlot(inventory, selectedSlot, settings, job::suits, job::speedOf)
-			.filter(slot -> job.speedOf(inventory.get(slot)) > speedToBeat)
+		// blocks that only drop themselves with silk touch get a silk touch tool, even over a tool that works
+		if (settings.prefersSilkTouch().test(state)) {
+			if (hasSilkTouch(held)) {
+				return NONE;
+			}
+			int previousSilk = previousToolSlot(inventory, selectedSlot, settings, job, job::harvestsWithSilkTouch);
+			if (previousSilk != NONE) {
+				return swapTo(held, inventory, previousSilk, true);
+			}
+			Optional<Integer> silk = bestSlot(inventory, selectedSlot, settings, job::harvestsWithSilkTouch, job::speedOf);
+			if (silk.isPresent()) {
+				return swapTo(held, inventory, silk.get(), false);
+			}
+		}
+
+		// a tool the mod picked for an earlier block gives way to the tool the player used before
+		if (!heldSuits || isAutoPicked(held)) {
+			int previous = previousToolSlot(inventory, selectedSlot, settings, job, job::suits);
+			if (previous != NONE) {
+				return swapTo(held, inventory, previous, true);
+			}
+		}
+
+		int slot = heldSuits ? fasterThanHeld(inventory, selectedSlot, held, job, settings) : bestTool(inventory, selectedSlot, job, settings);
+		return slot == NONE ? NONE : swapTo(held, inventory, slot, false);
+	}
+
+	/** A faster tool than the held one that works, unless the settings keep a working tool in hand. */
+	private static int fasterThanHeld(List<ItemStack> inventory, int selectedSlot, ItemStack held, MiningJob job, SwapSettings settings) {
+		if (settings.keepSuitableTool()) {
+			return NONE;
+		}
+		// only tools with the same silk touch choice, so the drops stay what the player picked
+		float heldSpeed = job.speedOf(held);
+		boolean heldSilk = hasSilkTouch(held);
+		return bestSlot(inventory, selectedSlot, settings, stack -> job.suits(stack) && hasSilkTouch(stack) == heldSilk, job::speedOf)
+			.filter(slot -> job.speedOf(inventory.get(slot)) > heldSpeed)
 			.orElse(NONE);
+	}
+
+	/** The fastest tool for the block; silk touch only when nothing else works, as it changes what most blocks drop. */
+	private static int bestTool(List<ItemStack> inventory, int selectedSlot, MiningJob job, SwapSettings settings) {
+		return bestSlot(inventory, selectedSlot, settings, stack -> job.suits(stack) && !hasSilkTouch(stack), job::speedOf)
+			.or(() -> bestSlot(inventory, selectedSlot, settings, job::suits, job::speedOf))
+			.orElse(NONE);
+	}
+
+	private int swapTo(ItemStack held, List<ItemStack> inventory, int slot, boolean backToPrevious) {
+		rememberSwap(held, inventory.get(slot), backToPrevious);
+		return slot;
+	}
+
+	/** The slot of the most recently used previous tool that fits, or {@link #NONE}. */
+	private int previousToolSlot(List<ItemStack> inventory, int selectedSlot, SwapSettings settings, MiningJob job,
+			Predicate<ItemStack> fits) {
+		if (!settings.returnToPreviousTool()) {
+			return NONE;
+		}
+		for (ItemStack previous : previousTools) {
+			if (!fits.test(previous)) {
+				continue;
+			}
+			Optional<Integer> slot = bestSlot(inventory, selectedSlot, settings, stack -> sameTool(stack, previous), job::speedOf);
+			if (slot.isPresent()) {
+				return slot.get();
+			}
+		}
+		return NONE;
+	}
+
+	/**
+	 * Updates what the picker knows after it chose {@code picked} to replace {@code held}. Only tools the player chose
+	 * themselves are remembered, so the mod's own picks never push out the player's tools. A tool the player gets back
+	 * counts as their own again.
+	 */
+	private void rememberSwap(ItemStack held, ItemStack picked, boolean backToPrevious) {
+		if (backToPrevious) {
+			previousTools.removeIf(stack -> sameTool(stack, picked));
+		}
+		if (!isAutoPicked(held) && held.has(DataComponents.TOOL)) {
+			previousTools.removeIf(stack -> sameTool(stack, held));
+			previousTools.addFirst(held.copy());
+			if (previousTools.size() > MAX_PREVIOUS_TOOLS) {
+				previousTools.removeLast();
+			}
+		}
+		autoPicked = backToPrevious ? null : picked.copy();
+	}
+
+	private boolean isAutoPicked(ItemStack held) {
+		return autoPicked != null && sameTool(held, autoPicked);
+	}
+
+	/** The same tool, ignoring wear: mining changes the damage of a tool but not what it is. */
+	private static boolean sameTool(ItemStack a, @Nullable ItemStack b) {
+		return b != null && !a.isEmpty() && a.getItem() == b.getItem()
+			&& a.getEnchantments().equals(b.getEnchantments())
+			&& Objects.equals(a.get(DataComponents.CUSTOM_NAME), b.get(DataComponents.CUSTOM_NAME));
+	}
+
+	static boolean hasSilkTouch(ItemStack stack) {
+		return stack.getEnchantments().keySet().stream().anyMatch(enchantment -> enchantment.is(Enchantments.SILK_TOUCH));
 	}
 
 	/** The slot with the best weapon to attack with, or {@link #NONE} if the held item should stay. */
@@ -164,6 +274,12 @@ public final class ToolPicker {
 			}
 			float speed = speedOf(stack);
 			return speed > MIN_TOOL_SPEED || breaksInstantly(speed);
+		}
+
+		/** A silk touch tool that gets the block's drops; most silk touch blocks have no tool that is faster on them. */
+		boolean harvestsWithSilkTouch(ItemStack stack) {
+			return stack.has(DataComponents.TOOL) && hasSilkTouch(stack)
+				&& (!state.requiresCorrectToolForDrops() || stack.isCorrectToolForDrops(state));
 		}
 
 		private boolean breaksInstantly(float speed) {

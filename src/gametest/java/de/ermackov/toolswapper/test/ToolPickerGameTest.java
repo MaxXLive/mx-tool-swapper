@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
@@ -34,13 +35,30 @@ public class ToolPickerGameTest {
 	private static final int NONE = ToolPicker.NONE;
 	private static final int HAND = 0;
 
+	/** Stands in for the silk touch block list of the config. */
+	private static final Predicate<BlockState> SILK_TOUCH_BLOCKS = state -> state.is(Blocks.GLASS) || state.is(Blocks.ENDER_CHEST);
+
 	private static SwapSettings defaults() {
-		return new SwapSettings(ToolSwapMode.ANY, true, false, true, 0, stack -> true);
+		return new SwapSettings(ToolSwapMode.ANY, true, false, true, 0, true, true, stack -> true, SILK_TOUCH_BLOCKS);
 	}
 
 	private static SwapSettings with(ToolSwapMode mode, boolean swapWeapon, boolean swapFromAnyItem, boolean searchHotbar,
 			int minRemainingDurability, Predicate<ItemStack> filter) {
-		return new SwapSettings(mode, swapWeapon, swapFromAnyItem, searchHotbar, minRemainingDurability, filter);
+		return new SwapSettings(mode, swapWeapon, swapFromAnyItem, searchHotbar, minRemainingDurability, true, true, filter,
+				SILK_TOUCH_BLOCKS);
+	}
+
+	/** Defaults, but a working tool in hand is swapped for a faster one. */
+	private static SwapSettings upgrading() {
+		return new SwapSettings(ToolSwapMode.ANY, true, false, true, 0, false, true, stack -> true, SILK_TOUCH_BLOCKS);
+	}
+
+	private static SwapSettings withoutReturnToPreviousTool() {
+		return new SwapSettings(ToolSwapMode.ANY, true, false, true, 0, true, false, stack -> true, SILK_TOUCH_BLOCKS);
+	}
+
+	private static SwapSettings withoutSilkTouchBlocks() {
+		return new SwapSettings(ToolSwapMode.ANY, true, false, true, 0, true, true, stack -> true, state -> false);
 	}
 
 	private static Predicate<ItemStack> allExcept(Item... items) {
@@ -72,6 +90,44 @@ public class ToolPickerGameTest {
 		ItemStack withEfficiency(ItemStack stack, int level) {
 			stack.enchant(efficiency, level);
 			return stack;
+		}
+
+		ItemStack enchanted(ItemStack stack, ResourceKey<Enchantment> enchantment) {
+			stack.enchant(helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(enchantment), 1);
+			return stack;
+		}
+
+		ItemStack silkTouch(int slot, Item item) {
+			return enchanted(put(slot, item), Enchantments.SILK_TOUCH);
+		}
+
+		ItemStack fortune(int slot, Item item) {
+			return enchanted(put(slot, item), Enchantments.FORTUNE);
+		}
+
+		/** Does what the mod does with a picked slot: puts its item into the hand. */
+		void swapIntoHand(int slot) {
+			ItemStack picked = inventory.get(slot);
+			inventory.set(slot, inventory.get(HAND));
+			inventory.set(HAND, picked);
+		}
+
+		/** Mines the block and swaps the picked item into the hand, like in game. Returns the picked slot. */
+		int mineAndSwap(Block block, SwapSettings settings) {
+			int slot = mine(block, settings);
+			if (slot != NONE) {
+				swapIntoHand(slot);
+			}
+			return slot;
+		}
+
+		void assertHolding(Item item, @Nullable ResourceKey<Enchantment> enchantment, String situation) {
+			ItemStack hand = inventory.get(HAND);
+			boolean enchanted = enchantment == null || hand.getEnchantments().keySet().stream().anyMatch(e -> e.is(enchantment));
+			if (!hand.is(item) || !enchanted) {
+				helper.fail(situation + ": expected " + item + (enchantment == null ? "" : " with " + enchantment.identifier())
+					+ " in hand, got " + hand);
+			}
 		}
 
 		int mine(Block block) {
@@ -208,7 +264,16 @@ public class ToolPickerGameTest {
 		Fixture f = new Fixture(helper);
 		f.put(HAND, Items.STONE_PICKAXE);
 		f.put(9, Items.DIAMOND_PICKAXE);
-		f.assertEquals(9, f.mine(Blocks.STONE));
+		f.assertEquals(9, f.mine(Blocks.STONE, upgrading()));
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_keepsAWorkingToolByDefault(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.put(HAND, Items.STONE_PICKAXE);
+		f.put(9, Items.DIAMOND_PICKAXE);
+		f.assertEquals(NONE, f.mine(Blocks.STONE));
 		helper.succeed();
 	}
 
@@ -235,10 +300,10 @@ public class ToolPickerGameTest {
 	public void mining_doesNotCheckAgainWhileMiningTheSameBlockTypeWithAWorkingTool(GameTestHelper helper) {
 		Fixture f = new Fixture(helper);
 		f.put(HAND, Items.STONE_PICKAXE);
-		f.assertEquals(NONE, f.mine(Blocks.STONE));
+		f.assertEquals(NONE, f.mine(Blocks.STONE, upgrading()));
 		f.put(9, Items.DIAMOND_PICKAXE);
-		f.assertEquals(NONE, f.mine(Blocks.STONE), "same block type again");
-		f.assertEquals(9, f.mine(Blocks.COBBLESTONE), "a different block type is checked again");
+		f.assertEquals(NONE, f.mine(Blocks.STONE, upgrading()), "same block type again");
+		f.assertEquals(9, f.mine(Blocks.COBBLESTONE, upgrading()), "a different block type is checked again");
 		helper.succeed();
 	}
 
@@ -246,10 +311,10 @@ public class ToolPickerGameTest {
 	public void mining_checksAgainAfterReset(GameTestHelper helper) {
 		Fixture f = new Fixture(helper);
 		f.put(HAND, Items.STONE_PICKAXE);
-		f.assertEquals(NONE, f.mine(Blocks.STONE));
+		f.assertEquals(NONE, f.mine(Blocks.STONE, upgrading()));
 		f.put(9, Items.DIAMOND_PICKAXE);
 		f.picker.reset();
-		f.assertEquals(9, f.mine(Blocks.STONE));
+		f.assertEquals(9, f.mine(Blocks.STONE, upgrading()));
 		helper.succeed();
 	}
 
@@ -420,6 +485,111 @@ public class ToolPickerGameTest {
 		f.assertEquals(9, f.mine(Blocks.STONE, anyItem), "empty hand");
 		f.put(HAND, Items.DIRT);
 		f.assertEquals(9, f.mine(Blocks.COBBLESTONE, anyItem), "block item in hand");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_returnsToThePreviousToolAfterAnotherBlockInBetween(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.silkTouch(HAND, Items.DIAMOND_PICKAXE);
+		f.fortune(9, Items.NETHERITE_PICKAXE);
+		f.put(10, Items.IRON_SHOVEL);
+		f.assertEquals(NONE, f.mineAndSwap(Blocks.STONE, defaults()));
+		f.mineAndSwap(Blocks.DIRT, defaults());
+		f.assertHolding(Items.IRON_SHOVEL, null, "after dirt");
+		f.mineAndSwap(Blocks.STONE, defaults());
+		f.assertHolding(Items.DIAMOND_PICKAXE, Enchantments.SILK_TOUCH, "back on stone");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_returnsToThePreviousToolAfterSeveralSwaps(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.put(HAND, Items.IRON_PICKAXE);
+		f.put(9, Items.NETHERITE_PICKAXE);
+		f.put(10, Items.IRON_SHOVEL);
+		f.put(11, Items.IRON_AXE);
+		f.mineAndSwap(Blocks.DIRT, defaults());
+		f.mineAndSwap(Blocks.OAK_LOG, defaults());
+		f.mineAndSwap(Blocks.DIRT, defaults());
+		f.assertHolding(Items.IRON_SHOVEL, null, "after dirt, logs and dirt");
+		f.mineAndSwap(Blocks.STONE, defaults());
+		f.assertHolding(Items.IRON_PICKAXE, null, "back on stone");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_picksTheFastestToolWhenReturningToThePreviousToolIsOff(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.silkTouch(HAND, Items.DIAMOND_PICKAXE);
+		f.put(9, Items.NETHERITE_PICKAXE);
+		f.put(10, Items.IRON_SHOVEL);
+		f.mineAndSwap(Blocks.DIRT, withoutReturnToPreviousTool());
+		f.mineAndSwap(Blocks.STONE, withoutReturnToPreviousTool());
+		f.assertHolding(Items.NETHERITE_PICKAXE, null, "back on stone");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_neverSwapsAHeldSilkTouchToolForAFasterToolWithout(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.silkTouch(HAND, Items.DIAMOND_PICKAXE);
+		f.fortune(9, Items.NETHERITE_PICKAXE);
+		f.assertEquals(NONE, f.mine(Blocks.STONE, upgrading()));
+		f.silkTouch(10, Items.NETHERITE_PICKAXE);
+		f.assertEquals(10, f.mine(Blocks.COBBLESTONE, upgrading()), "a faster silk touch tool is fine");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_prefersToolsWithoutSilkTouchForOrdinaryBlocks(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.put(HAND, Items.IRON_SHOVEL);
+		f.silkTouch(9, Items.NETHERITE_PICKAXE);
+		f.put(10, Items.STONE_PICKAXE);
+		f.assertEquals(10, f.mine(Blocks.STONE));
+		f.inventory.set(10, ItemStack.EMPTY);
+		f.assertEquals(9, f.mine(Blocks.STONE), "silk touch when nothing else works");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_picksSilkTouchForListedBlocksAndGoesBackAfterwards(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.fortune(HAND, Items.NETHERITE_PICKAXE);
+		f.silkTouch(9, Items.DIAMOND_PICKAXE);
+		f.mineAndSwap(Blocks.GLASS, defaults());
+		f.assertHolding(Items.DIAMOND_PICKAXE, Enchantments.SILK_TOUCH, "on glass");
+		f.mineAndSwap(Blocks.STONE, defaults());
+		f.assertHolding(Items.NETHERITE_PICKAXE, Enchantments.FORTUNE, "back on stone");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_picksSilkTouchForAListedBlockTheHeldToolCanMine(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.fortune(HAND, Items.NETHERITE_PICKAXE);
+		f.silkTouch(9, Items.IRON_SHOVEL);
+		f.silkTouch(10, Items.DIAMOND_PICKAXE);
+		f.assertEquals(10, f.mine(Blocks.ENDER_CHEST));
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_ignoresTheSilkTouchListWhenItIsOff(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.fortune(HAND, Items.NETHERITE_PICKAXE);
+		f.silkTouch(9, Items.DIAMOND_PICKAXE);
+		f.assertEquals(NONE, f.mine(Blocks.ENDER_CHEST, withoutSilkTouchBlocks()));
+		helper.succeed();
+	}
+
+	@GameTest
+	public void mining_doesNothingOnASilkTouchBlockWithoutASilkTouchTool(GameTestHelper helper) {
+		Fixture f = new Fixture(helper);
+		f.fortune(HAND, Items.NETHERITE_PICKAXE);
+		f.put(9, Items.DIAMOND_PICKAXE);
+		f.assertEquals(NONE, f.mine(Blocks.GLASS));
 		helper.succeed();
 	}
 
