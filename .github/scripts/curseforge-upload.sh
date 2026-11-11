@@ -44,17 +44,19 @@ for env in "${envs[@]}"; do
 	ids+=("$(version_id "$env" '^environment$')")
 done
 
-metadata=$(jq -n \
+# curl treats ';' in a -F value as an option separator, so the metadata goes through a file
+metadata_file=$(mktemp)
+jq -n \
 	--arg name "$DISPLAY_NAME" \
 	--rawfile changelog "$CHANGELOG_FILE" \
 	--argjson versions "$(printf '%s\n' "${ids[@]}" | jq -s 'map(tonumber)')" \
 	--argjson relations "$RELATIONS" \
 	'{displayName: $name, changelog: $changelog, changelogType: "markdown", releaseType: "release",
-	  gameVersions: $versions, relations: {projects: $relations}}')
+	  gameVersions: $versions, relations: {projects: $relations}}' > "$metadata_file"
 echo "Uploading $FILE to CurseForge project $CURSEFORGE_PROJECT with game versions ${ids[*]}"
 
 curl -sS --fail-with-body -H "X-Api-Token: $CURSEFORGE_TOKEN" \
-	-F "metadata=$metadata" \
+	-F "metadata=<$metadata_file;type=application/json" \
 	-F "file=@$FILE" \
 	"$api/projects/$CURSEFORGE_PROJECT/upload-file"
 echo
