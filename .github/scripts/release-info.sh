@@ -36,9 +36,7 @@ fi
 previous=$(git tag --list "${prefix}*" | grep -E "$semver_re" | sort -V | tail -n 1 || true)
 
 # Changelog range: since the most recent release tag of any format or mc version
-last_any=$(git describe --tags --abbrev=0 --match "v*-[0-9]*.[0-9]*.[0-9]*" 2>/dev/null \
-    || git describe --tags --abbrev=0 --match "v*-patch-*" 2>/dev/null \
-    || git describe --tags --abbrev=0 --match "v*-[0-9][0-9][0-9][0-9]" 2>/dev/null || true)
+last_any=$(git tag --list | grep -E "^v.*-([0-9]+\.[0-9]+\.[0-9]+|patch-[0-9]+|[0-9]{4})$" | sort -V | tail -1 || true)
 range="HEAD"
 [[ -n "$last_any" ]] && range="${last_any}..HEAD"
 
